@@ -506,7 +506,7 @@ styleEls.forEach(function (s) {
     var varName = match[1];
     var colorValue = match[2];
 
-    if (/(brand|primary|accent|secondary)/i.test(varName)) {
+    if (/(brand|primary)/i.test(varName)) {
       addPaletteColor(palette, colorValue, 4);
     }
   }
@@ -518,7 +518,7 @@ styleEls.forEach(function (s) {
       false,
       palette.length > 0
         ? palette.length + ' brand color(s) detected via CSS variables or theme-color'
-        : 'No brand colors found in CSS variables — define --color-primary etc. in :root',
+        : 'No core brand colors found — define variables like --color-brand, --color-primary, or --color-accent in :root',
       8
     );
 
