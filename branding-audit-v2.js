@@ -453,22 +453,64 @@
       6
     );
 
-    var themeColor = doc.querySelector('meta[name="theme-color"]');
-    if (themeColor) {
-      var tc = attrOf(themeColor, 'content');
-      if (tc) palette.push(tc);
+    function normalizeColorValue(color) {
+  return (color || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '');
+}
+
+function addPaletteColor(palette, color, max) {
+  if (!color) return;
+
+  var normalized = normalizeColorValue(color);
+
+  if (
+    !normalized ||
+    normalized === '#fff' ||
+    normalized === '#ffffff' ||
+    normalized === '#000' ||
+    normalized === '#000000' ||
+    normalized === 'white' ||
+    normalized === 'black' ||
+    normalized === 'transparent' ||
+    normalized.indexOf('rgba(0,0,0,0') === 0
+  ) {
+    return;
+  }
+
+  var alreadyExists = palette.some(function (existing) {
+    return normalizeColorValue(existing) === normalized;
+  });
+
+  if (!alreadyExists && palette.length < max) {
+    palette.push(color.trim());
+  }
+}
+
+var themeColor = doc.querySelector('meta[name="theme-color"]');
+if (themeColor) {
+  addPaletteColor(palette, attrOf(themeColor, 'content'), 4);
+}
+
+styleEls.forEach(function (s) {
+  var rootBlock = s.textContent.match(/:root\s*\{([\s\S]*?)\}/);
+  if (!rootBlock) return;
+
+  var rootCss = rootBlock[1];
+
+  var varRegex = /--([a-z0-9\-]+)\s*:\s*(#[0-9a-fA-F]{3,8}|rgb[a]?\([^)]+\)|hsl[a]?\([^)]+\))/gi;
+  var match;
+
+  while ((match = varRegex.exec(rootCss)) !== null) {
+    var varName = match[1];
+    var colorValue = match[2];
+
+    if (/(brand|primary|accent|secondary)/i.test(varName)) {
+      addPaletteColor(palette, colorValue, 4);
     }
-
-    styleEls.forEach(function (s) {
-      var rootBlock = s.textContent.match(/:root\s*\{([^}]+)\}/);
-      if (!rootBlock) return;
-
-      var varMatches = rootBlock[1].match(/--[a-z\-]*(color|primary|brand|accent|secondary)[^:]*:\s*(#[0-9a-fA-F]{3,8}|rgb[^;]+|hsl[^;]+)/gi) || [];
-      varMatches.slice(0, 8).forEach(function (m) {
-        var val = m.split(':').slice(1).join(':').trim().replace(/;$/, '');
-        if (val && palette.indexOf(val) === -1) palette.push(val);
-      });
-    });
+  }
+});
 
     check(
       'Brand color palette defined',
